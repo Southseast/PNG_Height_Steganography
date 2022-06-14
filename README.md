@@ -1,7 +1,31 @@
 # PNG_Height_Steganography
-CTF的MISC中根据CRC计算PNG隐写的图片高度。
+**CTF**的**MISC**中根据**CRC**计算**PNG**隐写的图片高度。
+## Versions
+**Python 3.10.0**
+## Usage
+```
+usage: main.py [-h] [--source_path SOURCE_PATH] [--target_path TARGET_PATH]
 
-## 食用方法
-python main.py -i <input_filename> -o <output_filename>
-### 示例
-python main.py -i 1.png -o 2.png
+PNG_Height_Steganography
+
+options:
+  -h, --help            show this help message and exit
+  --source_path SOURCE_PATH, -s SOURCE_PATH
+                        图片输入路径，默认为source文件夹
+  --target_path TARGET_PATH, -t TARGET_PATH
+                        图片输出路径，默认为target文件夹
+```
+## Examples
+```
+# 图片放进source文件夹，输出路径指向target文件夹
+python main.py
+
+# 指定图片输入路径，输出路径指向target文件夹
+python main.py -s source/example.png
+
+# 图片放进source文件夹，指定图片输出路径
+python main.py -t target/
+
+# 指定图片输入、输出路径
+python main.py -s source/example.png -t target/
+```

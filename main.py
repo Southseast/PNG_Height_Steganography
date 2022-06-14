@@ -1,49 +1,61 @@
-# -*- coding: utf-8 -*-
+# @Author: Southseast
+# @Date: 2022-06-14 18:28
+import argparse
 import binascii
+import os
 import struct
-import sys
-import getopt
 
 
-def main(argv):
-    try:
-        opts, args = getopt.getopt(argv, "i:o:", ["h"])
-    except getopt.GetoptError:
-        print('GetoptError: python main.py -i <input_filename> -o <output_filename>')
-        print('For example: python main.py -i 1.png -o 2.png')
-        sys.exit(2)
+class Steg():
 
-    for opt, arg in opts:
-        if opt in ("-h"):
-            print('python main.py -i <input_filename> -o <output_filename>')
-            print('For example: python main.py -i 1.png -o 2.png')
-            sys.exit()
-        elif opt in ("-i"):
-            input = arg
-        elif opt in ("-o"):
-            output = arg
+    def __init__(self, source_path, target_path):
+        self.suffix = ".png"
+        self.source_path = source_path
+        self.target_path = target_path
 
-    change(input, output)
+    def check_png(self, path):
+        if path.endswith(self.suffix):
+            return True
+        else:
+            return False
+
+    def find_all_file(self):
+        for root_name, middle_name_list, file_name_list in os.walk(self.source_path):
+            for file_name in file_name_list:
+                fullname = os.path.join(root_name, file_name)
+                yield fullname
+
+    def traverse(self):
+        if self.check_png(self.source_path):
+            target_file = os.path.basename(self.source_path)
+            self.recovery(self.source_path, self.target_path + target_file)
+        for i in self.find_all_file():
+            target_path = i.replace(self.source_path, self.target_path)
+            target_dir = os.path.dirname(target_path)
+            if not os.path.exists(target_dir):
+                os.makedirs(target_dir)
+            if self.check_png(i):
+                self.recovery(i, target_path)
+
+    def recovery(self, source_path, target_path):
+        m = open(source_path, "rb").read()
+        crc32 = int(m[29:33].hex(), 16)
+        for i in range(0, 65535):
+            height = struct.pack('>i', i)
+            data = m[12:20] + height + m[24:29]
+            res = binascii.crc32(data) & 0xffffffff
+            if res == crc32:
+                with open(target_path, "wb") as f:
+                    f.write(m[0:20] + height + m[24:-1])
+                    print("success in %s" % target_path)
+                    break
 
 
-def change(input, output):
-    m = open(input, "rb").read()
-    crc32 = int(m[29:33].encode('hex'), 16)
-    for i in range(0, 65535):
-        height = struct.pack('>i', i)
-        data = m[12:20] + height + m[24:29]
-        res = binascii.crc32(data) & 0xffffffff
-        if res == crc32:
-            with open(output, "w") as f:
-                f.writelines(m[0:20] + ''.join(map(lambda c: "%02X" % ord(c), height)).decode('hex') + m[24:-1])
-                print "Congratulation!"
-                break
-
-
-if __name__ == "__main__":
-    try:
-        main(sys.argv[1:])
-    except UnboundLocalError:
-        print('UnboundLocalError: python main.py -i <input_filename> -o <output_filename>')
-        print('For example: python main.py -i 1.png -o 2.png')
-        sys.exit(2)
+if __name__ == '__main__':
+    prefix_path = os.getcwd() + "/"
+    parser = argparse.ArgumentParser(description='PNG_Height_Steganography')
+    parser.add_argument('--source_path', '-s', help='图片输入路径，默认为source文件夹', default=prefix_path + "source/")
+    parser.add_argument('--target_path', '-t', help='图片输出路径，默认为target文件夹', default=prefix_path + "target/")
+    args = parser.parse_args()
+    steg = Steg(args.source_path, args.target_path)
+    steg.traverse()
